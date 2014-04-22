@@ -1,0 +1,21 @@
+{
+    "name": "arilas/whoops",
+    "description": "Whoops Implementation for Email Reporting",
+    "minimum-stability": "dev",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Alex Grand",
+            "email": "Kiral.Group@gmail.com"
+        }
+    ],
+    "require": {
+        "zendframework/zendframework": "2.3.*",
+        "filp/whoops": "1.*"
+    },
+    "autoload": {
+        "psr-4": {
+            "Arilas\\Whoops\\": "src/"
+        }
+    }
+}
