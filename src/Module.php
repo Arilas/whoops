@@ -8,6 +8,7 @@
 
 namespace Arilas\Whoops;
 
+use Arilas\Whoops\Handler\CallbackHandler as ArilasCallbackHandler;
 use Whoops\Handler\CallbackHandler;
 use Whoops\Handler\JsonResponseHandler;
 use Whoops\Handler\PrettyPageHandler;
@@ -18,13 +19,17 @@ use Zend\Loader\StandardAutoloader;
 use Zend\ModuleManager\Feature\BootstrapListenerInterface;
 use Zend\Mvc\Application;
 use Zend\Mvc\MvcEvent;
+use Zend\ServiceManager\ServiceLocatorInterface;
 use Zend\Stdlib\Response;
 
 class Module implements BootstrapListenerInterface
 {
     /** @var Run */
     protected $run = null;
+    /** @var array */
     protected $whoopsConfig = array();
+    /** @var  Zend\ServiceManager\ServiceLocatorInterface */
+    protected $serviceLocator;
 
     public function getAutoloaderConfig()
     {
@@ -44,6 +49,7 @@ class Module implements BootstrapListenerInterface
 
     public function onBootstrap(EventInterface $e)
     {
+        $this->serviceLocator = $e->getTarget()->getServiceManager();
         $config = $e->getTarget()->getServiceManager()->get('Config');
         $this->whoopsConfig = $config['arilas']['whoops'];
 
@@ -131,5 +137,10 @@ class Module implements BootstrapListenerInterface
     protected function callbackInit(CallbackHandler $handler)
     {
 
+    }
+
+    protected function locatorInit(ArilasCallbackHandler $handler)
+    {
+        $handler->setServiceLocator($this->serviceLocator);
     }
 }
