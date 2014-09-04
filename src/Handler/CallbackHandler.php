@@ -12,7 +12,7 @@ use Zend\ServiceManager\ServiceLocatorInterface;
 
 class CallbackHandler extends \Whoops\Handler\CallbackHandler
 {
-    /** @var  Zend\ServiceManager\ServiceLocatorInterface */
+    /** @var  ServiceLocatorInterface */
     protected $locator;
 
     public function setServiceLocator(ServiceLocatorInterface $serviceLocator)

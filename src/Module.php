@@ -9,11 +9,13 @@
 namespace Arilas\Whoops;
 
 use Arilas\Whoops\Handler\CallbackHandler as ArilasCallbackHandler;
+use Exception;
 use Whoops\Handler\CallbackHandler;
 use Whoops\Handler\JsonResponseHandler;
 use Whoops\Handler\PrettyPageHandler;
 use Whoops\Run;
 use Zend\EventManager\EventInterface;
+use Zend\Http\Request;
 use Zend\Loader\AutoloaderFactory;
 use Zend\Loader\StandardAutoloader;
 use Zend\ModuleManager\Feature\BootstrapListenerInterface;
@@ -28,7 +30,7 @@ class Module implements BootstrapListenerInterface
     protected $run = null;
     /** @var array */
     protected $whoopsConfig = array();
-    /** @var  Zend\ServiceManager\ServiceLocatorInterface */
+    /** @var  ServiceLocatorInterface */
     protected $serviceLocator;
 
     public function getAutoloaderConfig()
@@ -86,32 +88,38 @@ class Module implements BootstrapListenerInterface
      */
     public function prepareException(MvcEvent $e)
     {
-        $error = $e->getError();
-        if (!empty($error) && !$e->getResult() instanceof Response) {
-            switch ($error) {
-                case Application::ERROR_CONTROLLER_NOT_FOUND:
-                case Application::ERROR_CONTROLLER_INVALID:
-                case Application::ERROR_ROUTER_NO_MATCH:
-                    // Specifically not handling these
-                    return;
-
-                case Application::ERROR_EXCEPTION:
-                default:
-                    if (in_array(get_class($e->getParam('exception')), $this->whoopsConfig['blacklist'])) {
-                        // No catch this exception
+        if ($e->getRequest() instanceof Request) {
+            $error = $e->getError();
+            if (!empty($error) && !$e->getResult() instanceof Response) {
+                switch ($error) {
+                    case Application::ERROR_CONTROLLER_NOT_FOUND:
+                    case Application::ERROR_CONTROLLER_INVALID:
+                    case Application::ERROR_ROUTER_NO_MATCH:
+                        // Specifically not handling these
                         return;
-                    }
 
-                    if ($this->whoopsConfig['handler']['options_type'] === 'prettyPage') {
-                        $response = $e->getResponse();
-                        if (!$response || $response->getStatusCode() === 200) {
-                            header('HTTP/1.0 500 Internal Server Error', true, 500);
+                    case Application::ERROR_EXCEPTION:
+                    default:
+                        /** @var Exception $exception */
+                        $exception = $e->getParam('exception');
+                        // Filter exceptions that we must except
+                        foreach ($this->whoopsConfig['blacklist'] as $except) {
+                            if ($exception instanceof $except) {
+                                return;
+                            }
                         }
-                        ob_clean();
-                    }
 
-                    $this->run->handleException($e->getParam('exception'));
-                    break;
+                        if ($this->whoopsConfig['handler']['options_type'] === 'prettyPage') {
+                            $response = $e->getResponse();
+                            if (!$response || $response->getStatusCode() === 200) {
+                                header('HTTP/1.0 500 Internal Server Error', true, 500);
+                            }
+                            ob_clean();
+                        }
+
+                        $this->run->handleException($e->getParam('exception'));
+                        break;
+                }
             }
         }
     }
